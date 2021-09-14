@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body {
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 15px;
+        }
+        #myBtn {
+          display: none;
+          position: fixed;
+          bottom: 20px;
+          right: 30px;
+          z-index: 99;
+          font-size: 18px;
+          border: none;
+          outline: none;
+          background-color: red;
+          color: white;
+          cursor: pointer;
+          padding: 15px;
+          border-radius: 4px;
+        }
+        
+        #myBtn:hover {
+          background-color: #555;
+        }
+        
+            #toc_container {
+            background: #f9f9f9 none repeat scroll 0 0;
+            border: 1px solid #aaa;
+            display: table;
+            font-size: 120%;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 1em;
+            padding: 20px;
+            width: auto;
+            }
+        
+            .toc_title {
+                font-weight: 700;
+                text-align: center;
+            }
+        
+            #toc_container li, #toc_container ul, #toc_container ul li{
+                list-style: outside none none !important;
+            }
+        
+            p{
+                margin-left: 30px;
+            }
+            h1{
+                margin-left: 30px;
+            }
+            h2{
+                margin-left: 30px;
+            }
+            h3{
+                margin-left: 30px;
+            }
+            h4{
+                margin-left: 30px;
+            }
+            table{
+                border: 1px solid black;
+                margin-left: 40px;
+                margin-right: auto;
+                text-align: center;
+            }
+        </style>
+    </head>
+<body>
+
+    <!-- <button style="height:100px;width:150px" nclick="topFunction()" id="myBtn">Go To Top!</button> -->
+
+<div style="background-color:black;color:white;padding:30px;font-size: 60px;">Demo Of VoiceFixer</div>
+<div style="background-color:lightgrey;padding:30px 30px 25px">
+    Voicefixer aims at the restoration of human speech regardless how serious its degraded. It can handle <strong>noise, reveberation, low resolution (2kHz~44.1kHz) and clipping (0.1-1.0 threshold)</strong> effect within one model.
+</div>
+<p>Build by Haohe Liu on Sep.14.2021 in Shanghai. With wild typhoon <i>Chanthu</i> outside.</p>
+
+<script>
+//Get the button
+var mybutton = document.getElementById("myBtn");
+
+// When the user scrolls down 20px from the top of the document, show the button
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+// When the user clicks on the button, scroll to the top of the document
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+<script type="text/javascript">
+        function getModelDir(model){
+            if(model == "enh") return "Enh_UNet";
+            if(model == "unet") return "GSR_UNet";
+            if(model == "vf") return "VF_UNet";
+            if(model == "up") return "Unprocessed";
+            return null;
+        }
+        function getSimuModelDir(model){
+            if(model == "enh") return "Enh_UNet";
+            if(model == "derev") return "Derev_UNet";
+            if(model == "declip") return "Declip_UNet";
+            if(model == "unet") return "GSR_UNet";
+            if(model == "nuwave") return "NuWave";
+            if(model == "oracle") return "Oracle";
+            if(model == "sspade") return "SSPADE";
+            if(model == "sr") return "SR_UNet";
+            if(model == "seanet") return "SEANet";
+            if(model == "vf") return "VF_UNet";
+            if(model == "up") return "Unprocessed";
+            if(model == "tar") return "Target";
+            return null;
+        }
+        function getWav(model, fname){
+            return "<audio controls=\"\">"+"<source src=\"resources/audio/real/"+getModelDir(model)+"/"+fname+".wav\" type=\"audio/wav\"></source></audio>";
+        }   
+        function getPic(model, fname){
+            return "<img src=\"resources/audio/real/"+getModelDir(model)+"/"+fname+".png\" alt=fname height=\"200\" width=\"350\" />"; 
+        }
+        function getSimuWav(task, model, fname){
+            console.log("<audio controls=\"\">"+"<source src=\"resources/audio/simulated/"+task+"/"+getSimuModelDir(model)+"/"+fname+".wav\" type=\"audio/wav\"></source></audio>")
+            return "<audio controls=\"\">"+"<source src=\"resources/audio/simulated/"+task+"/"+getSimuModelDir(model)+"/"+fname+".wav\" type=\"audio/wav\"></source></audio>";
+        }
+        function getSimuPic(task, model, fname){
+            console.log("<img src=\"resources/audio/simulated/"+task+"/"+getSimuModelDir(model)+"/"+fname+".png\" alt=fname height=\"100\" width=\"175\" />")
+            return "<img src=\"resources/audio/simulated/"+task+"/"+getSimuModelDir(model)+"/"+fname+".png\" alt=fname height=\"125\" width=\"200\" />"; 
+        }
+</script>
+
+<!-- <img src="resources/pics/GSR.png" alt="GSR" height="200" width="550">
+<img src="resources/pics/voicefixer.png" alt="GSR" height="200" width="800"> -->
+
+<!-- <h1>Demo of VoiceFixer</h1>
+
+<p>Voicefixer aims at the restoration of human speech regardless how serious its degraded. It can handle noise, reveberation, low resolution (2kHz~44.1kHz) and clipping (0.1-1.0 threshold) effect within one model.</p> -->
+<hr>
+    
+<div >
+    <div id="toc_container">
+        <p class="toc_title">Contents</p>
+        <ul class="toc_list">
+          <li><a href="#head_1">1. About</a>
+        </li>
+        <li><a href="#head_2">2. Demos On Each Testset.</a></li>
+          <ul>
+            <li><a href="#head_2_1">2.1 Generic Speech Restoration (ALL-GSR)</a></li>
+            <li><a href="#head_2_2">2.2 Speech Super Resolution (SR)</a>
+                <ul>
+                    <li><a href="#head_2_2_1">2.2.1 From 4kHz to 44.1kHz</li>
+                        <li><a href="#head_2_2_2">2.2.2 From 8kHz to 44.1kHz</li>
+                            <li><a href="#head_2_2_3">2.2.3 From 24kHz to 44.1kHz</li>
+                </ul>
+            
+            </li>
+
+            <li><a href="#head_2_3">2.3 Speech Enhancement (DENOISE)</a></li>
+            <li><a href="#head_2_4">2.4 Speech Dereverberation (DEREV)</a></li>
+            <li><a href="#head_2_5">2.5 Speech Declipping (DECLI)</a>
+                <ul>
+                    <li><a href="#head_2_5_1">2.5.1 Clipping threshold 0.1 </li>
+                        <li><a href="#head_2_5_2">2.5.2 Clipping threshold 0.25 </li>
+                </ul>
+            </li>
+          </ul>
+        <li><a href="#head_3">3. Demos On Real World Data</a></li>
+        <ul>
+            <li><a href="#head_3_1">3.1 Comparison between enhancement only SSR, Regression based GSR and VoiceFixer GSR</a></li>
+            <li><a href="#head_3_2">3.2 More demos</a></li>
+            <li><a href="#head_3_3">3.3 Demo video on old movie repairment(in Chinese). </a></li>
+          </ul>
+        </ul>
+    </div>
+</div>
+
+<h2 id="head_1">About</h2>
+<p>Paper will be ready soon.</p>
+
+<div align= "center">
+    <img src="resources/pics/models.png" alt="models" height="400" width="1050">
+</div>
+
+
+<h2 id="head_2">Testset Data Demos</h2>
+
+<h3 id="head_2_1">Generic Speech Restoration (ALL-GSR)</h3>
+
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getSimuModelDir("up"))</script></th>
+        <th><script>document.write(getSimuModelDir("enh"))</script></th>
+        <th><script>document.write(getSimuModelDir("derev"))</script></th>
+        <th><script>document.write(getSimuModelDir("unet"))</script></th>
+        <th><script>document.write(getSimuModelDir("vf"))</script></th>
+        <th><script>document.write(getSimuModelDir("oracle"))</script></th>
+        <th><script>document.write(getSimuModelDir("tar"))</script></th>
+    </tr>
+    <tr>
+        <td>33_simulated</td> 
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","up","33_simulated"));</script></td> 
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","enh","33_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","derev","33_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","unet","33_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","vf","33_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","oracle","33_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","tar","33_simulated"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","up","33_simulated"));</script></td> 
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","enh","33_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","derev","33_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","unet","33_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","vf","33_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","oracle","33_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","tar","33_simulated"));</script></td>
+    </tr>
+    <tr>
+        <td>127_simulated</td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","up","127_simulated"));</script></td> 
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","enh","127_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","derev","127_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","unet","127_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","vf","127_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","oracle","127_simulated"));</script></td>
+        <td><script>document.write(getSimuWav("Generic_Speech_Restoration","tar","127_simulated"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","up","127_simulated"));</script></td> 
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","enh","127_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","derev","127_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","unet","127_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","vf","127_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","oracle","127_simulated"));</script></td>
+        <td><script>document.write(getSimuPic("Generic_Speech_Restoration","tar","127_simulated"));</script></td>
+    </tr>
+</table>
+
+<h3 id="head_2_2">Speech Super Resolution (SR)</h3>
+
+<h4 id="head_2_2_1">From 4kHz to 44.1kHz</h4>
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getSimuModelDir("up"))</script></th>
+        <th><script>document.write(getSimuModelDir("nuwave"))</script></th>
+        <th><script>document.write(getSimuModelDir("seanet"))</script></th>
+        <th><script>document.write(getSimuModelDir("sr"))</script></th>
+        <th><script>document.write(getSimuModelDir("unet"))</script></th>
+        <th><script>document.write(getSimuModelDir("vf"))</script></th>
+        <th><script>document.write(getSimuModelDir("oracle"))</script></th>
+        <th><script>document.write(getSimuModelDir("tar"))</script></th>
+    </tr>
+    <tr>
+        <td>p361_056</td> 
+        <td><script>document.write(getSimuWav("Super_resolution_4k","up","p361_056"));</script></td> 
+        <td><script>document.write(getSimuWav("Super_resolution_4k","nuwave","p361_056"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","seanet","p361_056"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","sr","p361_056"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","unet","p361_056"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","vf","p361_056"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","oracle","p361_056"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","tar","p361_056"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getSimuPic("Super_resolution_4k","up","p361_056"));</script></td> 
+        <td><script>document.write(getSimuPic("Super_resolution_4k","nuwave","p361_056"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","seanet","p361_056"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","sr","p361_056"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","unet","p361_056"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","vf","p361_056"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","oracle","p361_056"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","tar","p361_056"));</script></td>
+    </tr>
+    <tr>
+        <td>p374_098</td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","up","p374_098"));</script></td> 
+        <td><script>document.write(getSimuWav("Super_resolution_4k","nuwave","p374_098"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","seanet","p374_098"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","sr","p374_098"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","unet","p374_098"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","vf","p374_098"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","oracle","p374_098"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_4k","tar","p374_098"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","up","p374_098"));</script></td> 
+        <td><script>document.write(getSimuPic("Super_resolution_4k","nuwave","p374_098"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","seanet","p374_098"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","sr","p374_098"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","unet","p374_098"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","vf","p374_098"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","oracle","p374_098"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_4k","tar","p374_098"));</script></td>
+    </tr>
+</table>
+
+<h4 id="head_2_2_2">From 8kHz to 44.1kHz</h4>
+
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getSimuModelDir("up"))</script></th>
+        <th><script>document.write(getSimuModelDir("nuwave"))</script></th>
+        <th><script>document.write(getSimuModelDir("seanet"))</script></th>
+        <th><script>document.write(getSimuModelDir("sr"))</script></th>
+        <th><script>document.write(getSimuModelDir("unet"))</script></th>
+        <th><script>document.write(getSimuModelDir("vf"))</script></th>
+        <th><script>document.write(getSimuModelDir("oracle"))</script></th>
+        <th><script>document.write(getSimuModelDir("tar"))</script></th>
+    </tr>
+    <tr>
+        <td>p360_002</td> 
+        <td><script>document.write(getSimuWav("Super_resolution_8k","up","p360_002"));</script></td> 
+        <td><script>document.write(getSimuWav("Super_resolution_8k","nuwave","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","seanet","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","sr","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","unet","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","vf","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","oracle","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","tar","p360_002"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getSimuPic("Super_resolution_8k","up","p360_002"));</script></td> 
+        <td><script>document.write(getSimuPic("Super_resolution_8k","nuwave","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","seanet","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","sr","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","unet","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","vf","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","oracle","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","tar","p360_002"));</script></td>
+    </tr>
+    <tr>
+        <td>p361_002</td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","up","p361_002"));</script></td> 
+        <td><script>document.write(getSimuWav("Super_resolution_8k","nuwave","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","seanet","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","sr","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","unet","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","vf","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","oracle","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_8k","tar","p361_002"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","up","p361_002"));</script></td> 
+        <td><script>document.write(getSimuPic("Super_resolution_8k","nuwave","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","seanet","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","sr","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","unet","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","vf","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","oracle","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_8k","tar","p361_002"));</script></td>
+    </tr>
+</table>
+<h4 id="head_2_2_3">From 24kHz to 44.1kHz</h4>
+
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getSimuModelDir("up"))</script></th>
+        <th><script>document.write(getSimuModelDir("nuwave"))</script></th>
+        <th><script>document.write(getSimuModelDir("seanet"))</script></th>
+        <th><script>document.write(getSimuModelDir("sr"))</script></th>
+        <th><script>document.write(getSimuModelDir("unet"))</script></th>
+        <th><script>document.write(getSimuModelDir("vf"))</script></th>
+        <th><script>document.write(getSimuModelDir("oracle"))</script></th>
+        <th><script>document.write(getSimuModelDir("tar"))</script></th>
+    </tr>
+    <tr>
+        <td>p360_002</td> 
+        <td><script>document.write(getSimuWav("Super_resolution_24k","up","p360_002"));</script></td> 
+        <td><script>document.write(getSimuWav("Super_resolution_24k","nuwave","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","seanet","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","sr","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","unet","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","vf","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","oracle","p360_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","tar","p360_002"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getSimuPic("Super_resolution_24k","up","p360_002"));</script></td> 
+        <td><script>document.write(getSimuPic("Super_resolution_24k","nuwave","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","seanet","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","sr","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","unet","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","vf","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","oracle","p360_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","tar","p360_002"));</script></td>
+    </tr>
+    <tr>
+        <td>p361_002</td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","up","p361_002"));</script></td> 
+        <td><script>document.write(getSimuWav("Super_resolution_24k","nuwave","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","seanet","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","sr","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","unet","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","vf","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","oracle","p361_002"));</script></td>
+        <td><script>document.write(getSimuWav("Super_resolution_24k","tar","p361_002"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","up","p361_002"));</script></td> 
+        <td><script>document.write(getSimuPic("Super_resolution_24k","nuwave","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","seanet","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","sr","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","unet","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","vf","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","oracle","p361_002"));</script></td>
+        <td><script>document.write(getSimuPic("Super_resolution_24k","tar","p361_002"));</script></td>
+    </tr>
+</table>
+
+<h3 id="head_2_3">Speech Enhancement (DENOISE)</h3>
+
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getSimuModelDir("up"))</script></th>
+        <th><script>document.write(getSimuModelDir("enh"))</script></th>
+        <th><script>document.write(getSimuModelDir("unet"))</script></th>
+        <th><script>document.write(getSimuModelDir("vf"))</script></th>
+        <th><script>document.write(getSimuModelDir("oracle"))</script></th>
+        <th><script>document.write(getSimuModelDir("tar"))</script></th>
+    </tr>
+    <tr>
+        <td>p232_005</td> 
+        <td><script>document.write(getSimuWav("Enhancement","up","p232_005"));</script></td> 
+        <td><script>document.write(getSimuWav("Enhancement","enh","p232_005"));</script></td>
+        <td><script>document.write(getSimuWav("Enhancement","unet","p232_005"));</script></td>
+        <td><script>document.write(getSimuWav("Enhancement","vf","p232_005"));</script></td>
+        <td><script>document.write(getSimuWav("Enhancement","oracle","p232_005"));</script></td>
+        <td><script>document.write(getSimuWav("Enhancement","tar","p232_005"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getSimuPic("Enhancement","up","p232_005"));</script></td> 
+        <td><script>document.write(getSimuPic("Enhancement","enh","p232_005"));</script></td>
+        <td><script>document.write(getSimuPic("Enhancement","unet","p232_005"));</script></td>
+        <td><script>document.write(getSimuPic("Enhancement","vf","p232_005"));</script></td>
+        <td><script>document.write(getSimuPic("Enhancement","oracle","p232_005"));</script></td>
+        <td><script>document.write(getSimuPic("Enhancement","tar","p232_005"));</script></td>
+    </tr>
+    <tr>
+        <td>p257_008</td>
+        <td><script>document.write(getSimuWav("Enhancement","up","p257_008"));</script></td> 
+        <td><script>document.write(getSimuWav("Enhancement","enh","p257_008"));</script></td>
+        <td><script>document.write(getSimuWav("Enhancement","unet","p257_008"));</script></td>
+        <td><script>document.write(getSimuWav("Enhancement","vf","p257_008"));</script></td>
+        <td><script>document.write(getSimuWav("Enhancement","oracle","p257_008"));</script></td>
+        <td><script>document.write(getSimuWav("Enhancement","tar","p257_008"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getSimuPic("Enhancement","up","p257_008"));</script></td> 
+        <td><script>document.write(getSimuPic("Enhancement","enh","p257_008"));</script></td>
+        <td><script>document.write(getSimuPic("Enhancement","unet","p257_008"));</script></td>
+        <td><script>document.write(getSimuPic("Enhancement","vf","p257_008"));</script></td>
+        <td><script>document.write(getSimuPic("Enhancement","oracle","p257_008"));</script></td>
+        <td><script>document.write(getSimuPic("Enhancement","tar","p257_008"));</script></td>
+    </tr>
+</table>
+
+<h3 id="head_2_4">Speech Dereverberation (DEREV)</h3>
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getSimuModelDir("up"))</script></th>
+        <th><script>document.write(getSimuModelDir("derev"))</script></th>
+        <th><script>document.write(getSimuModelDir("unet"))</script></th>
+        <th><script>document.write(getSimuModelDir("vf"))</script></th>
+        <th><script>document.write(getSimuModelDir("oracle"))</script></th>
+        <th><script>document.write(getSimuModelDir("tar"))</script></th>
+    </tr>
+    <tr>
+        <td>p361_001</td> 
+        <td><script>document.write(getSimuWav("Dereverberation","up","p361_001"));</script></td> 
+        <td><script>document.write(getSimuWav("Dereverberation","derev","p361_001"));</script></td>
+        <td><script>document.write(getSimuWav("Dereverberation","unet","p361_001"));</script></td>
+        <td><script>document.write(getSimuWav("Dereverberation","vf","p361_001"));</script></td>
+        <td><script>document.write(getSimuWav("Dereverberation","oracle","p361_001"));</script></td>
+        <td><script>document.write(getSimuWav("Dereverberation","tar","p361_001"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getSimuPic("Dereverberation","up","p361_001"));</script></td> 
+        <td><script>document.write(getSimuPic("Dereverberation","derev","p361_001"));</script></td>
+        <td><script>document.write(getSimuPic("Dereverberation","unet","p361_001"));</script></td>
+        <td><script>document.write(getSimuPic("Dereverberation","vf","p361_001"));</script></td>
+        <td><script>document.write(getSimuPic("Dereverberation","oracle","p361_001"));</script></td>
+        <td><script>document.write(getSimuPic("Dereverberation","tar","p361_001"));</script></td>
+    </tr>
+    <tr>
+        <td>p363_004</td>
+        <td><script>document.write(getSimuWav("Dereverberation","up","p363_004"));</script></td> 
+        <td><script>document.write(getSimuWav("Dereverberation","derev","p363_004"));</script></td>
+        <td><script>document.write(getSimuWav("Dereverberation","unet","p363_004"));</script></td>
+        <td><script>document.write(getSimuWav("Dereverberation","vf","p363_004"));</script></td>
+        <td><script>document.write(getSimuWav("Dereverberation","oracle","p363_004"));</script></td>
+        <td><script>document.write(getSimuWav("Dereverberation","tar","p363_004"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getSimuPic("Dereverberation","up","p363_004"));</script></td> 
+        <td><script>document.write(getSimuPic("Dereverberation","derev","p363_004"));</script></td>
+        <td><script>document.write(getSimuPic("Dereverberation","unet","p363_004"));</script></td>
+        <td><script>document.write(getSimuPic("Dereverberation","vf","p363_004"));</script></td>
+        <td><script>document.write(getSimuPic("Dereverberation","oracle","p363_004"));</script></td>
+        <td><script>document.write(getSimuPic("Dereverberation","tar","p363_004"));</script></td>
+    </tr>
+</table>
+
+<h3 id="head_2_5">Speech Declipping (DECLI)</h3>
+
+<h4 id="head_2_5_1">Clipping threshold 0.1</h4>
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getSimuModelDir("up"))</script></th>
+        <th><script>document.write(getSimuModelDir("declip"))</script></th>
+        <th><script>document.write(getSimuModelDir("sspade"))</script></th>
+        <th><script>document.write(getSimuModelDir("unet"))</script></th>
+        <th><script>document.write(getSimuModelDir("vf"))</script></th>
+        <th><script>document.write(getSimuModelDir("oracle"))</script></th>
+        <th><script>document.write(getSimuModelDir("tar"))</script></th>
+    </tr>
+    <tr>
+        <td>p360_001</td> 
+        <td><script>document.write(getSimuWav("Declippin_0.1","up","p360_001"));</script></td> 
+        <td><script>document.write(getSimuWav("Declippin_0.1","declip","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.1","sspade","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.1","unet","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.1","vf","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.1","oracle","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.1","tar","p360_001"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getSimuPic("Declippin_0.1","up","p360_001"));</script></td> 
+        <td><script>document.write(getSimuPic("Declippin_0.1","declip","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.1","sspade","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.1","unet","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.1","vf","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.1","oracle","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.1","tar","p360_001"));</script></td>
+    </tr>
+</table>
+
+<h4 id="head_2_5_1">Clipping threshold 0.25</h4>
+
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getSimuModelDir("up"))</script></th>
+        <th><script>document.write(getSimuModelDir("declip"))</script></th>
+        <th><script>document.write(getSimuModelDir("sspade"))</script></th>
+        <th><script>document.write(getSimuModelDir("unet"))</script></th>
+        <th><script>document.write(getSimuModelDir("vf"))</script></th>
+        <th><script>document.write(getSimuModelDir("oracle"))</script></th>
+        <th><script>document.write(getSimuModelDir("tar"))</script></th>
+    </tr>
+    <tr>
+        <td>p360_001</td> 
+        <td><script>document.write(getSimuWav("Declippin_0.25","up","p360_001"));</script></td> 
+        <td><script>document.write(getSimuWav("Declippin_0.25","declip","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.25","sspade","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.25","unet","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.25","vf","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.25","oracle","p360_001"));</script></td>
+        <td><script>document.write(getSimuWav("Declippin_0.25","tar","p360_001"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getSimuPic("Declippin_0.25","up","p360_001"));</script></td> 
+        <td><script>document.write(getSimuPic("Declippin_0.25","declip","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.25","sspade","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.25","unet","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.25","vf","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.25","oracle","p360_001"));</script></td>
+        <td><script>document.write(getSimuPic("Declippin_0.25","tar","p360_001"));</script></td>
+    </tr>
+</table>
+
+<h3 id="head_3_1">Comparison between enhancement only SSR, Regression based GSR and VoiceFixer GSR</h3>
+
+<table border="1">
+    <tr>
+        <th>Speaker info</th>
+        <th><script>document.write(getModelDir("up"))</script></th>
+        <th><script>document.write(getModelDir("enh"))</script></th>
+        <th><script>document.write(getModelDir("unet"))</script></th>
+        <th><script>document.write(getModelDir("vf"))</script></th>
+    </tr>
+    <tr>
+        <td>A recording of my voice.</td> 
+        <td><script>document.write(getWav("up","haohe"));</script></td> 
+        <td><script>document.write(getWav("enh","haohe"));</script></td>
+        <td><script>document.write(getWav("unet","haohe"));</script></td>
+        <td><script>document.write(getWav("vf","haohe"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getPic("up","haohe"));</script></td> 
+        <td><script>document.write(getPic("enh","haohe"));</script></td>
+        <td><script>document.write(getPic("unet","haohe"));</script></td>
+        <td><script>document.write(getPic("vf","haohe"));</script></td>
+    </tr>
+    <tr>
+        <td>TV news interviews.</td> 
+        <td><script>document.write(getWav("up","dagong"));</script></td> 
+        <td><script>document.write(getWav("enh","dagong"));</script></td>
+        <td><script>document.write(getWav("unet","dagong"));</script></td>
+        <td><script>document.write(getWav("vf","dagong"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getPic("up","dagong"));</script></td> 
+        <td><script>document.write(getPic("enh","dagong"));</script></td>
+        <td><script>document.write(getPic("unet","dagong"));</script></td>
+        <td><script>document.write(getPic("vf","dagong"));</script></td>
+    </tr>
+    <tr>
+        <td>Chinese Youtuber.</td> 
+        <td><script>document.write(getWav("up","xigua"));</script></td> 
+        <td><script>document.write(getWav("enh","xigua"));</script></td>
+        <td><script>document.write(getWav("unet","xigua"));</script></td>
+        <td><script>document.write(getWav("vf","xigua"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td>
+        <td><script>document.write(getPic("up","xigua"));</script></td> 
+        <td><script>document.write(getPic("enh","xigua"));</script></td>
+        <td><script>document.write(getPic("unet","xigua"));</script></td>
+        <td><script>document.write(getPic("vf","xigua"));</script></td>
+    </tr>
+    <tr>
+    <!-- <td><script>document.write(getPic("dagong_full"));</script></td> <td><script>document.write(getPic("dagong_full"));</script></td> -->
+    </tr>
+
+</table>
+
+<h2 id="head_3_2">More demos</h2>
+<table border="1" style="text-align:center;">
+    <tr>
+        <th>Speaker info</th>
+        <th>Before</th>
+        <th>After</th>
+        <th>Speaker info</th>
+        <th>Before</th>
+        <th>After</th>
+    </tr>
+    <tr>
+        <td><a href="https://www.bilibili.com/video/BV1if4y1N7qz">Speech by Bruce Lee (1940-1973)</a></td> 
+        <td><script>document.write(getWav("up","bruce"));</script></td> 
+        <td><script>document.write(getWav("vf","bruce"));</script></td>
+        <td><a href="https://www.loc.gov/item/afccal000004/">Speech by Amelia Earhart (1897-1937)</a></td> 
+        <td><script>document.write(getWav("up","congress"));</script></td> 
+        <td><script>document.write(getWav("vf","congress"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getPic("up","bruce"));</script></td> 
+        <td><script>document.write(getPic("vf","bruce"));</script></td>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getPic("up","congress"));</script></td> 
+        <td><script>document.write(getPic("vf","congress"));</script></td>
+    </tr>
+    <tr>
+        <td><a href="https://www.bilibili.com/video/BV1U7411Y7m9/?spm_id_from=333.788.recommend_more_video.14">Documentary film</a></td> 
+        <td><script>document.write(getWav("up","zhangxueliang"));</script></td> 
+        <td><script>document.write(getWav("vf","zhangxueliang"));</script></td>
+        <td><a href="https://www.bilibili.com/video/BV1tW411p7J7?from=search&seid=5563862303262314298&spm_id_from=333.337.0.0">Speech by Hu Shi (1891-1962)</a></td> 
+        <td><script>document.write(getWav("up","hushi"));</script></td> 
+        <td><script>document.write(getWav("vf","hushi"));</script></td>
+    </tr>
+    <tr>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getPic("up","zhangxueliang"));</script></td> 
+        <td><script>document.write(getPic("vf","zhangxueliang"));</script></td>
+        <td>Spectrogram</td> 
+        <td><script>document.write(getPic("up","hushi"));</script></td> 
+        <td><script>document.write(getPic("vf","hushi"));</script></td>
+    </tr>
+
+    <!-- <td><script>document.write(getPic("dagong_full"));</script></td> <td><script>document.write(getPic("dagong_full"));</script></td> -->
+
+</table>
+
+
+
+
+
+
+
+<!-- <div>
+    
+
+    
+    <audio controls="">
+        <source src="resources/audio/real/unprocessed/dagong_full_orig.wav" type="audio/wav">
+        </source>
+    </audio>
+    <audio controls="">
+        <source src="resources/audio/real/unprocessed/dagong_full_orig.wav" type="audio/wav">
+        </source>
+    </audio>
+    
+</div> -->
+
+
+
+
+<h2 id="head_3_3">Demo video we made (in Chinese)</h2>
+
+<div  style="margin-left:30px; position: relative; padding: 30% 45%;">
+
+    <iframe style="position: absolute; width: 50%; height: 50%; left: 0; top: 0;" src="https://player.bilibili.com/player.html?aid=973700495&bvid=BV1h44y1B7q1&cid=354283569&page=1" frameborder="no" scrolling="no">
+    </iframe>    
+</div> 
+
+
+</iframe>
+
+</body>
+</html>
+
+
+
+
